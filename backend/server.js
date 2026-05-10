@@ -8,16 +8,21 @@ const userRoutes = require('./routes/userRoutes');
 const app = express();
 connectDB();
 
-// Middlewares
-app.use(cors());
+// 1. Configuración de CORS profesional
+app.use(cors({
+    origin: '*', // Esto permite que Vercel entre sin problemas
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
-// Rutas de la API
-app.use('/api/properties', propertyRoutes);
-app.use('/api/users', userRoutes);
+// 2. Rutas simplificadas para coincidir con tu Frontend
+app.use('/properties', propertyRoutes);
+app.use('/users', userRoutes);
 
-// Ruta de prueba
-app.get('/api/status', (req, res) => {
+// Ruta de prueba (ahora disponible en /status)
+app.get('/status', (req, res) => {
     res.json({ message: 'PropTech API funcionando correctamente' });
 });
 
