@@ -1,17 +1,17 @@
-import api from './api';
+import axios from 'axios';
+
+// Esta línea detecta automáticamente si debe usar Vercel o tu PC
+const API_URL = import.meta.env.VITE_API_URL || 'https://castelia-api.onrender.com';
 
 export const getProperties = async () => {
-    const response = await api.get('/properties');
-    return response.data;
+    try {
+        const response = await axios.get(`${API_URL}/properties`);
+        return response.data;
+    } catch (error) {
+        console.error("Error en getProperties:", error);
+        throw error;
+    }
 };
 
-// Nueva función para enviar la propiedad con imagen
-export const createProperty = async (propertyData) => {
-    // Usamos FormData para que el navegador maneje el archivo correctamente
-    const response = await api.post('/properties', propertyData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-    });
-    return response.data;
-};
+// Si tienes más funciones como createProperty o updateProperty, 
+// asegúrate de que todas usen ${API_URL} en lugar de localhost.
