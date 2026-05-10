@@ -1,17 +1,33 @@
 import axios from 'axios';
 
-// Esta línea detecta automáticamente si debe usar Vercel o tu PC
 const API_URL = import.meta.env.VITE_API_URL || 'https://castelia-api.onrender.com';
 
+// 1. Obtener todas las propiedades
 export const getProperties = async () => {
-    try {
-        const response = await axios.get(`${API_URL}/properties`);
-        return response.data;
-    } catch (error) {
-        console.error("Error en getProperties:", error);
-        throw error;
-    }
+    const response = await axios.get(`${API_URL}/properties`);
+    return response.data;
 };
 
-// Si tienes más funciones como createProperty o updateProperty, 
-// asegúrate de que todas usen ${API_URL} en lugar de localhost.
+// 2. Crear una nueva propiedad (ESTA ES LA QUE TE PIDE VERCEL)
+export const createProperty = async (propertyData) => {
+    const response = await axios.post(`${API_URL}/properties`, propertyData);
+    return response.data;
+};
+
+// 3. Obtener una sola propiedad por ID
+export const getPropertyById = async (id) => {
+    const response = await axios.get(`${API_URL}/properties/${id}`);
+    return response.data;
+};
+
+// 4. Actualizar/Editar una propiedad
+export const updateProperty = async (id, propertyData) => {
+    const response = await axios.put(`${API_URL}/properties/${id}`, propertyData);
+    return response.data;
+};
+
+// 5. Eliminar una propiedad
+export const deleteProperty = async (id) => {
+    const response = await axios.delete(`${API_URL}/properties/${id}`);
+    return response.data;
+};
