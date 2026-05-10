@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Navbar } from './components/Navbar';
-import Breadcrumb from './components/Breadcrumb';
+import { Navbar } from './components/NavbarX';
+import Breadcrumb from './components/BreadcrumbX';
 import Properties from './pages/Properties';
 import PropertyDetail from './pages/PropertyDetail';
 import Login from './pages/Login';
