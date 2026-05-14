@@ -1,84 +1,32 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Navbar } from './components/NavbarX';
-import Breadcrumb from './components/BreadcrumbX';
-import Properties from './pages/Properties';
-import PropertyDetail from './pages/PropertyDetail';
-import Login from './pages/Login';
-import CreateProperty from './pages/CreateProperty';
-import EditProperty from './pages/EditProperty';
-import ProtectedRoute from './components/ProtectedRoute';
-import Dashboard from './pages/Dashboard';
-
+import SearchSection from './components/SearchSection';
 
 const App = () => {
-  return (
-    <Router>
-      <div className="min-h-screen bg-castelia-light text-castelia-dark font-sans flex flex-col">
-        
-        {/* Navegación fija en la parte superior (Sticky Header) */}
-        <Navbar />
+    return (
+        <div className="min-h-screen bg-gray-50 font-sans">
+            {/* Sticky Header */}
+            <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-100">
+                <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+                    <h1 className="text-2xl font-extrabold text-green-800 tracking-tight">Castelia Studio</h1>
+                    <nav className="hidden md:flex gap-6 text-sm font-medium text-gray-600">
+                        <a href="#" className="hover:text-green-600 transition-colors">Properties</a>
+                        <a href="#" className="hover:text-green-600 transition-colors">AI Agent</a>
+                    </nav>
+                </div>
+            </header>
 
-        {/* Contenedor principal con espaciado profesional de Castelia Studio */}
-        <main className="flex-grow max-w-7xl mx-auto w-full p-6 mt-4">
-          
-          {/* Indicador de ruta dinámico (Organic Breadcrumb) */}
-          <Breadcrumb />
-          
-          <Routes>
-            {/* Rutas Públicas */}
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/login" element={<Login />} />
-            
-            {/* Rutas Protegidas (Requieren autenticación JWT) */}
-            <Route 
-              path="/properties" 
-              element={
-                <ProtectedRoute>
-                  <Properties />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Ruta Dinámica para Detalle de Propiedad */}
-            <Route 
-              path="/properties/:id" 
-              element={
-                <ProtectedRoute>
-                  <PropertyDetail />
-                </ProtectedRoute>
-              } 
-            />
+            <main className="container mx-auto px-6 py-8">
+                {/* Organic Breadcrumb */}
+                <nav className="mb-8 text-sm text-gray-500 flex items-center gap-2">
+                    <a href="#" className="hover:text-green-700 transition-colors">Home</a>
+                    <span>/</span>
+                    <a href="#" className="hover:text-green-700 transition-colors">Smart Search</a>
+                </nav>
 
-            {/* Ruta para Crear Nueva Propiedad */}
-            <Route 
-              path="/create-property" 
-              element={
-                <ProtectedRoute>
-                  <CreateProperty />
-                </ProtectedRoute>
-              } 
-            />
-
-            {/* Ruta Dinámica para Editar Propiedad Existente */}
-            <Route 
-              path="/edit-property/:id" 
-              element={
-                <ProtectedRoute>
-                  <EditProperty />
-                </ProtectedRoute>
-              } 
-            />
-          </Routes>
-        </main>
-        
-        {/* Footer institucional de Castelia Studio */}
-        <footer className="py-6 text-center text-gray-400 text-xs tracking-widest uppercase">
-          © 2026 Prime Estate Platform | Castelia Studio Development
-        </footer>
-      </div>
-    </Router>
-  );
+                {/* AI Module */}
+                <SearchSection />
+            </main>
+        </div>
+    );
 };
 
 export default App;

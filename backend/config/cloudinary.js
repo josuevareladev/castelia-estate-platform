@@ -1,8 +1,8 @@
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const multer = require('multer');
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import multer from 'multer';
 
-// Configuración de credenciales
+// Configuración de credenciales (usando las variables de entorno ya configuradas)
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -13,14 +13,11 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'prime-estate-properties', // Carpeta donde se guardarán en Cloudinary
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'], // Formatos permitidos
+    folder: 'castelia-estate-properties', // Actualizado a la nomenclatura de Castelia
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'], 
   },
 });
 
 // Middleware de Multer listo para usarse en las rutas
-// ... (resto del código de configuración de cloudinary)
-
-const upload = multer({ storage: storage });
-
-module.exports = { cloudinary, upload }; // Exportación como objeto
+export const upload = multer({ storage });
+export { cloudinary };

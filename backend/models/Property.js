@@ -1,41 +1,18 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const propertySchema = new mongoose.Schema({
-    admin: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'User' // Establece la relación directa con la colección de Usuarios
-    },
-    title: { 
+    title: { type: String, required: true, trim: true },
+    description: { type: String, required: true },
+    price: { type: Number, required: true, index: true },
+    region: { 
         type: String, 
-        required: true 
+        required: true, 
+        // Actualizamos el enum a inglés:
+        enum: ['north', 'south', 'east', 'west', 'center'], 
+        index: true 
     },
-    description: { 
-        type: String, 
-        required: true 
-    },
-    price: { 
-        type: Number, 
-        required: true 
-    },
-    location: { 
-        type: String, 
-        required: true 
-    },
-    image: { 
-        type: String 
-    }, // Almacena la URL generada por Cloudinary
-    features: {
-        bedrooms: { type: Number },
-        bathrooms: { type: Number },
-        sqft: { type: Number }
-    },
-    status: { 
-        type: String, 
-        default: 'available' 
-    }
-}, { 
-    timestamps: true // Crea automáticamente campos 'createdAt' y 'updatedAt'
-});
+    features: { type: [String], default: [] },
+    imageUrl: { type: String, default: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg' }
+}, { timestamps: true });
 
-module.exports = mongoose.model('Property', propertySchema);
+export default mongoose.model('Property', propertySchema);

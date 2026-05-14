@@ -1,25 +1,27 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema({
     name: { 
         type: String, 
-        required: true 
+        required: [true, 'El nombre es obligatorio'] 
     },
     email: { 
         type: String, 
-        required: true, 
-        unique: true 
+        required: [true, 'El correo electrónico es obligatorio'], 
+        unique: true,
+        trim: true,
+        lowercase: true
     },
     password: { 
         type: String, 
-        required: true 
+        required: [true, 'La contraseña es obligatoria'] 
     },
 }, { 
     timestamps: true 
 });
 
-// Encriptar contraseña antes de guardar (Actualizado sin parámetro 'next')
+// Encriptar contraseña antes de guardar
 userSchema.pre('save', async function() {
     if (!this.isModified('password')) {
         return;
@@ -33,4 +35,4 @@ userSchema.methods.matchPassword = async function(enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+export default mongoose.model('User', userSchema);

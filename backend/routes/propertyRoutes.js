@@ -1,18 +1,25 @@
-const express = require('express');
+import express from 'express';
+import { 
+    getProperties, 
+    createProperty, 
+    getPropertyById, 
+    updateProperty, 
+    deleteProperty 
+} from '../controllers/propertyController.js';
+import { protect } from '../middlewares/authMiddleware.js'; 
+import { upload } from '../config/cloudinary.js'; 
+
 const router = express.Router();
-const propertyController = require('../controllers/propertyController');
-const { protect } = require('../middleware/authMiddleware');
-const { upload } = require('../config/cloudinary'); 
 
 // Rutas generales: Ver todas y Crear
 router.route('/')
-    .get(propertyController.getProperties)
-    .post(protect, upload.single('image'), propertyController.createProperty);
+    .get(getProperties)
+    .post(protect, upload.single('image'), createProperty);
 
 // Rutas específicas por ID: Ver detalle, Actualizar y Eliminar
 router.route('/:id')
-    .get(propertyController.getPropertyById)
-    .put(protect, upload.single('image'), propertyController.updateProperty)
-    .delete(protect, propertyController.deleteProperty);
+    .get(getPropertyById)
+    .put(protect, upload.single('image'), updateProperty)
+    .delete(protect, deleteProperty);
 
-module.exports = router;
+export default router;

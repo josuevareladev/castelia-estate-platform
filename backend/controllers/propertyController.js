@@ -1,10 +1,11 @@
-const Property = require('../models/Property');
-const cloudinary = require('cloudinary').v2;
+import Property from '../models/Property.js';
+import { v2 as cloudinary } from 'cloudinary';
 
 // Crear nueva propiedad con imagen
-const createProperty = async (req, res) => {
+export const createProperty = async (req, res, next) => {
     try {
         const propertyData = req.body;
+        // Asumiendo que req.user viene del authMiddleware
         propertyData.admin = req.user._id; 
 
         if (req.file) {
@@ -14,38 +15,79 @@ const createProperty = async (req, res) => {
         const newProperty = new Property(propertyData);
         const savedProperty = await newProperty.save();
         
-        res.status(201).json(savedProperty);
+        res.status(201).json({
+            success: true,
+            data: savedProperty
+        });
     } catch (error) {
-        console.error('Falla Crítica al crear propiedad:', error);
-        res.status(500).json({ message: 'Error interno del servidor.' });
+        next(error); // Pasamos el error al manejador global
     }
 };
 
-// Obtener todas las propiedades
-const getProperties = async (req, res) => {
+// Obtener todas las propiedades (Optimizada con Paginación y Filtros para la IA)
+export const getProperties = async (req, res, next) => {
     try {
-        const properties = await Property.find();
-        res.status(200).json(properties);
+        const { minPrice, maxPrice, regionId, page = 1, limit = 10 } = req.query;
+        const query = {}; 
+
+        // Filtrado por precio para el Agente AI
+        if (minPrice || maxPrice) {
+            query.price = {};
+            if (minPrice) query.price.$gte = Number(minPrice);
+            if (maxPrice) query.price.$lte = Number(maxPrice);
+        }
+
+        // Filtrado por región
+        if (regionId) {
+            query.regionId = regionId;
+        }
+
+        const skip = (Number(page) - 1) * Number(limit);
+
+        // Búsqueda optimizada (O(log n) si hay índices)
+        const properties = await Property.find(query)
+            .skip(skip)
+            .limit(Number(limit))
+            .lean(); // .lean() lo hace más rápido al devolver JSON puro
+
+        const total = await Property.countDocuments(query);
+
+        res.status(200).json({
+            success: true,
+            count: properties.length,
+            meta: {
+                total,
+                page: Number(page),
+                pages: Math.ceil(total / Number(limit))
+            },
+            data: properties
+        });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // Obtener detalle de una sola propiedad
-const getPropertyById = async (req, res) => {
+export const getPropertyById = async (req, res, next) => {
     try {
         const property = await Property.findById(req.params.id);
         if (!property) {
-            return res.status(404).json({ message: 'Propiedad no encontrada' });
+            // Creamos un error personalizado que el errorHandler atrapará
+            const error = new Error('Propiedad no encontrada');
+            error.statusCode = 404;
+            throw error;
         }
-        res.status(200).json(property);
+        res.status(200).json({
+            success: true,
+            data: property
+        });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
-// Actualizar propiedad (incluyendo posible cambio de imagen)
-const updateProperty = async (req, res) => {
+// Actualizar propiedad
+export const updateProperty = async (req, res, next) => {
     try {
         const updateData = req.body;
 
@@ -60,25 +102,32 @@ const updateProperty = async (req, res) => {
         );
 
         if (!updatedProperty) {
-            return res.status(404).json({ message: 'Propiedad no encontrada' });
+            const error = new Error('Propiedad no encontrada');
+            error.statusCode = 404;
+            throw error;
         }
 
-        res.status(200).json(updatedProperty);
+        res.status(200).json({
+            success: true,
+            data: updatedProperty
+        });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // Eliminar propiedad y su imagen en Cloudinary
-const deleteProperty = async (req, res) => {
+export const deleteProperty = async (req, res, next) => {
     try {
         const property = await Property.findById(req.params.id);
         
         if (!property) {
-            return res.status(404).json({ message: 'Propiedad no encontrada' });
+            const error = new Error('Propiedad no encontrada');
+            error.statusCode = 404;
+            throw error;
         }
 
-        // Lógica para borrar la imagen de la nube antes de borrar el registro
+        // Lógica para borrar la imagen de la nube
         if (property.image && property.image.includes('cloudinary')) {
             const urlParts = property.image.split('/');
             const filenameWithExt = urlParts[urlParts.length - 1]; 
@@ -91,17 +140,11 @@ const deleteProperty = async (req, res) => {
 
         await Property.findByIdAndDelete(req.params.id);
 
-        res.status(200).json({ message: 'Propiedad e imagen eliminadas correctamente' });
+        res.status(200).json({ 
+            success: true, 
+            message: 'Propiedad e imagen eliminadas correctamente' 
+        });
     } catch (error) {
-        console.error('Error Crítico al eliminar propiedad:', error);
-        res.status(500).json({ message: 'Error interno del servidor al procesar la eliminación.' });
+        next(error);
     }
-};
-
-module.exports = {
-    createProperty,
-    getProperties,
-    getPropertyById,
-    updateProperty,
-    deleteProperty
 };
