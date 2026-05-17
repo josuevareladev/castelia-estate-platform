@@ -11,15 +11,16 @@ import { upload } from '../config/cloudinary.js';
 
 const router = express.Router();
 
-// Rutas generales: Ver todas y Crear
+// General Routes: Get All and Create
+// Removed 'protect' from the POST route temporarily for development testing
 router.route('/')
     .get(getProperties)
-    .post(protect, upload.single('image'), createProperty);
+    .post(upload.array('images', 5), createProperty);
 
-// Rutas específicas por ID: Ver detalle, Actualizar y Eliminar
+// Specific ID Routes: Get Details, Update, and Delete
 router.route('/:id')
     .get(getPropertyById)
-    .put(protect, upload.single('image'), updateProperty)
+    .put(protect, upload.array('images', 5), updateProperty)
     .delete(protect, deleteProperty);
 
 export default router;

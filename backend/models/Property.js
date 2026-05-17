@@ -7,12 +7,11 @@ const propertySchema = new mongoose.Schema({
     region: { 
         type: String, 
         required: true, 
-        // Actualizamos el enum a inglés:
         enum: ['north', 'south', 'east', 'west', 'center'], 
         index: true 
     },
     features: { type: [String], default: [] },
-    imageUrl: { type: String, default: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg' }
+    images: { type: [String], required: true, default: [] } 
 }, { timestamps: true });
 
 export default mongoose.model('Property', propertySchema);
