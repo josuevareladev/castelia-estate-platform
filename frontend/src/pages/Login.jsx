@@ -1,91 +1,74 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginAdmin } from '../services/authService';
-import { AuthContext } from '../context/AuthContext';
+import Swal from 'sweetalert2';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  
-  const { login } = useContext(AuthContext);
-  const navigate = useNavigate();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
-  const submitHandler = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    
-    try {
-      const responseData = await loginAdmin(email, password);
-      
-      // Armamos el objeto de usuario con la respuesta plana que vimos en la red
-      const userData = {
-        _id: responseData._id,
-        name: responseData.name,
-        email: responseData.email
-      };
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setLoading(true);
 
-      // Guardamos la sesión y cruzamos la puerta hacia /properties
-      login(userData, responseData.token); 
-      navigate('/properties'); 
-    } catch (err) {
-      setError('Invalid credentials. Please check your email and password.');
-      setLoading(false);
-    }
-  };
+        try {
+            await loginAdmin(email, password);
+            Swal.fire({
+                title: 'Authenticated Successfully',
+                text: 'Welcome back to Castelia Studio Dashboard.',
+                icon: 'success',
+                confirmButtonColor: '#16a34a'
+            });
+            navigate('/create');
+        } catch (error) {
+            Swal.fire({
+                title: 'Authentication Failed',
+                text: error.response?.data?.error || 'Invalid credentials provided.',
+                icon: 'error',
+                confirmButtonColor: '#16a34a'
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  return (
-    <div className="flex items-center justify-center min-h-[80vh]">
-      <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full border-t-4 border-castelia-primary">
-        <h2 className="text-2xl font-bold text-castelia-dark mb-2">Admin Portal Access</h2>
-        <p className="text-gray-600 mb-6 text-sm">Enter your credentials to manage Prime Estate Platform.</p>
-        
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 text-sm">
-            {error}
-          </div>
-        )}
-        
-        <form onSubmit={submitHandler} className="space-y-5">
-          <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-castelia-dark mb-1">Email Address</label>
-            <input 
-              type="email" 
-              id="email"
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              required 
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-castelia-primary focus:border-transparent transition-all"
-              placeholder="admin@prime.com"
-            />
-          </div>
-          
-          <div>
-            <label htmlFor="password" className="block text-sm font-semibold text-castelia-dark mb-1">Password</label>
-            <input 
-              type="password" 
-              id="password"
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-castelia-primary focus:border-transparent transition-all"
-              placeholder="••••••••"
-            />
-          </div>
-          
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-castelia-primary hover:bg-castelia-accent hover:text-castelia-dark text-white font-bold py-2 px-4 rounded transition-all mt-2 disabled:opacity-50"
-          >
-            {loading ? 'Authenticating...' : 'Secure Login'}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+    return (
+        <section className="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-xl border-t-4 border-green-600 mt-16 mb-10">
+            <h2 className="text-2xl font-black text-gray-800 mb-2 uppercase tracking-tight text-center">Admin Access</h2>
+            <p className="text-gray-400 text-xs text-center uppercase font-bold mb-6">Castelia Studio Management</p>
+            
+            <form onSubmit={handleLogin} className="space-y-5">
+                <div>
+                    <label className="text-xs font-black uppercase text-gray-400 mb-1 block">Email Address</label>
+                    <input 
+                        type="email" required
+                        placeholder="admin@castelia.com"
+                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 outline-none transition-all"
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                </div>
+
+                <div>
+                    <label className="text-xs font-black uppercase text-gray-400 mb-1 block">Password</label>
+                    <input 
+                        type="password" required
+                        placeholder="••••••••"
+                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-600 outline-none transition-all"
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                </div>
+
+                <button 
+                    type="submit" disabled={loading}
+                    className="w-full bg-green-600 text-white font-black py-3 rounded-xl hover:bg-green-700 transition-all shadow-lg shadow-green-600/20 disabled:opacity-50"
+                >
+                    {loading ? 'Verifying Identity...' : 'Log In'}
+                </button>
+            </form>
+        </section>
+    );
 };
 
 export default Login;

@@ -4,24 +4,25 @@ import bcrypt from 'bcryptjs';
 const userSchema = new mongoose.Schema({
     name: { 
         type: String, 
-        required: [true, 'El nombre es obligatorio'] 
+        required: [true, 'Name is required'] 
     },
     email: { 
         type: String, 
-        required: [true, 'El correo electrónico es obligatorio'], 
+        required: [true, 'Email is required'], 
         unique: true,
         trim: true,
         lowercase: true
     },
     password: { 
         type: String, 
-        required: [true, 'La contraseña es obligatoria'] 
+        required: [true, 'Password is required'],
+        minlength: [6, 'Password must be at least 6 characters long']
     },
 }, { 
     timestamps: true 
 });
 
-// Encriptar contraseña antes de guardar
+// Encriptación nativa con async/await (Sin callbacks obsoletos)
 userSchema.pre('save', async function() {
     if (!this.isModified('password')) {
         return;
@@ -30,7 +31,6 @@ userSchema.pre('save', async function() {
     this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Comparar contraseñas para el Login
 userSchema.methods.matchPassword = async function(enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };

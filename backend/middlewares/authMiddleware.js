@@ -1,32 +1,34 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js'; // Obligatorio usar la extensión .js en módulos locales
+import User from '../models/User.js';
 
 export const protect = async (req, res, next) => {
     let token;
 
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
-            // Obtener el token del encabezado
             token = req.headers.authorization.split(' ')[1];
 
-            // Verificar el token
+            // Verify token mathematically
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // Agregar el usuario a la petición (menos la contraseña)
+            // Fetch user and attach to request object, excluding the password field
             req.user = await User.findById(decoded.id).select('-password');
+            
+            if (!req.user) {
+                const error = new Error('User attached to this token no longer exists');
+                error.statusCode = 401;
+                throw error;
+            }
 
             next();
         } catch (error) {
-            // Delegamos el error al errorHandler global
-            const err = new Error('No autorizado, token fallido o expirado');
+            const err = new Error('Not authorized, token failed or expired');
             err.statusCode = 401;
-            return next(err);
+            next(err);
         }
-    }
-
-    if (!token) {
-        const err = new Error('No autorizado, no se proporcionó un token');
-        err.statusCode = 401;
-        return next(err);
+    } else {
+        const error = new Error('Not authorized, no token provided');
+        error.statusCode = 401;
+        next(error);
     }
 };

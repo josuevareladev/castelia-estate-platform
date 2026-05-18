@@ -1,23 +1,21 @@
-import api from './api';
+import axios from 'axios';
 
-// Authenticates admin and returns user data + token
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 export const loginAdmin = async (email, password) => {
-  try {
-    // Cambio crucial: Se ajustó la ruta a '/users/login' para coincidir con el backend
-    const response = await api.post('/users/login', { email, password });
-    
-    // Save to local storage for persistence
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify({
-        _id: response.data._id,
-        name: response.data.name,
-        email: response.data.email
-      }));
+    const response = await axios.post(`${API_URL}/auth/login`, { email, password });
+    if (response.data.success && response.data.data.token) {
+        localStorage.setItem('adminToken', response.data.data.token);
+        localStorage.setItem('adminUser', JSON.stringify(response.data.data));
     }
-    
     return response.data;
-  } catch (error) {
-    throw error.response ? error.response.data : new Error('Network error');
-  }
+};
+
+export const logoutAdmin = () => {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUser');
+};
+
+export const getAuthToken = () => {
+    return localStorage.getItem('adminToken');
 };

@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import { errorHandler } from './middlewares/errorHandler.js'; 
 import agentRoutes from './routes/agentRoutes.js';
 import propertyRoutes from './routes/propertyRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,10 +18,9 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 
-// 1. Robust CORS Policy
 const allowedOrigins = [
-    'https://castelia-estate-platform.vercel.app', // Production Frontend
-    'http://localhost:5173'                        // Local Frontend
+    'https://castelia-estate-platform.vercel.app', 
+    'http://localhost:5173'                        
 ];
 
 app.use(cors({
@@ -35,11 +35,9 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
-// Security & Parsing Middlewares
 app.use(express.json());
 app.use(mongoSanitize());
 
-// Database Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB: Connection established successfully'))
   .catch((err) => console.error('❌ MongoDB: Critical connection error ->', err.message));
@@ -47,18 +45,16 @@ mongoose.connect(process.env.MONGO_URI)
 // API Routing
 app.use('/api/properties', propertyRoutes);
 app.use('/api/agent', agentRoutes);
+app.use('/api/auth', authRoutes);
 
-// 2. Health Check Endpoint
 app.get('/', (req, res) => {
     res.status(200).json({ success: true, status: 'Castelia API is active' });
 });
 
-// 3. Fallback 404 Handler (Crucial to prevent HTML responses from breaking Axios)
 app.use('*', (req, res) => {
     res.status(404).json({ success: false, error: 'API Endpoint not found' });
 });
 
-// Global Error Handler
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;

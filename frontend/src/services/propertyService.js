@@ -1,6 +1,18 @@
 import axios from 'axios';
+import { getAuthToken } from './authService';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+// Configura un interceptor para inyectar automáticamente el token en cada petición
+axios.interceptors.request.use((config) => {
+    const token = getAuthToken();
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+}, (error) => {
+    return Promise.reject(error);
+});
 
 export const getProperties = async () => {
     const response = await axios.get(`${API_URL}/properties`);

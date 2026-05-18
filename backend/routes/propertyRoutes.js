@@ -11,13 +11,12 @@ import { upload } from '../config/cloudinary.js';
 
 const router = express.Router();
 
-// General Routes: Get All and Create
-// Removed 'protect' from the POST route temporarily for development testing
+// General Routes: Get All and Protected Create with Multer
 router.route('/')
     .get(getProperties)
-    .post(upload.array('images', 5), createProperty);
+    .post(protect, upload.array('images', 5), createProperty);
 
-// Specific ID Routes: Get Details, Update, and Delete
+// Specific ID Routes: Get Details, Protected Update, and Protected Delete
 router.route('/:id')
     .get(getPropertyById)
     .put(protect, upload.array('images', 5), updateProperty)
