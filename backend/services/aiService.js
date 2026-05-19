@@ -1,56 +1,47 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-/**
- * Servicio de IA para Castelia Studio.
- * Analiza el prompt del usuario y extrae filtros estructurados.
- * Arquitectura: Utiliza gemini-2.5-flash para optimizar la latencia
- * y maximizar la cuota de peticiones por minuto.
- */
-export const extractFiltersFromPrompt = async (userPrompt) => {
+export const semanticSearch = async (userPrompt, inventoryData) => {
     try {
         if (!process.env.GEMINI_API_KEY) {
-            throw new Error('La variable GEMINI_API_KEY no está definida en el entorno.');
+            throw new Error('GEMINI_API_KEY environment variable is not defined.');
         }
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-        // Actualizado al modelo 2.5-flash: el balance ideal entre precisión para JSON y velocidad.
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const systemInstruction = `
-            Actúa como un extractor de datos estricto para Castelia Studio.
-            Tu objetivo es transformar el lenguaje natural en un objeto JSON de filtros para una base de datos de bienes raíces.
+            Act as a highly advanced semantic search engine for a real estate platform.
+            You will be provided with a User Prompt and a JSON array of Available Properties.
+            Your objective is to analyze the semantic meaning of the User Prompt and find the properties that best match the user's needs, desires, and constraints.
 
-            Reglas:
-            1. Responde UNICAMENTE el objeto JSON puro.
-            2. Si no se menciona un valor, establécelo como null.
-            3. Los precios deben ser números.
+            Available Properties:
+            ${JSON.stringify(inventoryData)}
 
-            Estructura:
-            {
-                "minPrice": número o null,
-                "maxPrice": número o null,
-                "region": "nombre" o null,
-                "intent": "resumen breve de la intención"
-            }
+            User Prompt: "${userPrompt}"
 
-            Entrada del usuario: "${userPrompt}"
+            Rules:
+            1. Return ONLY a valid JSON array of strings, where each string is the "_id" of a matching property.
+            2. Do not include any markdown, explanations, or additional text. Just the JSON array.
+            3. If no properties match the criteria semantically, return an empty array [].
+            4. Consider synonyms, lifestyle requirements (e.g., "dogs" matches "pet-friendly"), and implicit needs.
         `;
 
         const result = await model.generateContent(systemInstruction);
         const response = await result.response;
         const text = response.text();
 
-        // Sanitización estricta: eliminamos markdown residual si el LLM lo incluye
+        // Strict sanitization: remove markdown formatting if the LLM includes it
         const jsonString = text.replace(/```json|```/gi, '').trim();
+        const matchedIds = JSON.parse(jsonString);
 
-        return JSON.parse(jsonString);
+        if (!Array.isArray(matchedIds)) {
+            throw new Error("AI did not return a valid array of IDs.");
+        }
+
+        return matchedIds;
 
     } catch (error) {
-        // Log detallado para trazabilidad en el servidor
-        console.error("[aiService] Error en la capa de IA:", error.message);
-        
-        // Propagamos el error de forma controlada
-        throw new Error(`Fallo en el procesamiento de lenguaje natural: ${error.message}`);
+        console.error("[aiService] Semantic Search Error:", error.message);
+        throw new Error(`AI processing failed: ${error.message}`);
     }
 };

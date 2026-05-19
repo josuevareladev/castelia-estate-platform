@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 import cors from 'cors'; 
 import mongoose from 'mongoose'; 
 import mongoSanitize from 'express-mongo-sanitize';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -17,6 +19,24 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
+
+// 1. Security Headers (Helmet)
+app.use(helmet());
+
+// 2. Global Rate Limiting (Prevents DDoS)
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: { 
+        success: false, 
+        error: 'Too many requests from this IP, please try again after 15 minutes' 
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Apply global limiter only to API routes
+app.use('/api', globalLimiter);
 
 const allowedOrigins = [
     'https://castelia-estate-platform.vercel.app', 
@@ -48,7 +68,7 @@ app.use('/api/agent', agentRoutes);
 app.use('/api/auth', authRoutes);
 
 app.get('/', (req, res) => {
-    res.status(200).json({ success: true, status: 'Castelia API is active' });
+    res.status(200).json({ success: true, status: 'Castelia API is active and secured' });
 });
 
 app.use('*', (req, res) => {

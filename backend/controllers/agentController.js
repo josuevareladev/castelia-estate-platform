@@ -1,61 +1,55 @@
 import * as aiService from '../services/aiService.js';
 import Property from '../models/Property.js';
 
-/**
- * Controlador principal del Agente de IA.
- * Orquestra el flujo: Prompt -> Filtros (IA) -> Búsqueda (DB) -> Respuesta.
- */
-export const processAgentQuery = async (req, res) => {
+export const processAgentQuery = async (req, res, next) => {
     try {
         const { prompt } = req.body;
 
         if (!prompt) {
-            return res.status(400).json({
-                success: false,
-                error: 'El prompt es requerido para procesar la búsqueda.'
+            const error = new Error('A prompt is required to process the search.');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // 1. Fetch lightweight inventory (only text fields, excluding heavy image arrays)
+        // Complexity: O(1) bandwidth optimization
+        const inventoryLight = await Property.find({})
+            .select('_id title description price region features')
+            .lean();
+
+        if (inventoryLight.length === 0) {
+            return res.status(200).json({
+                success: true,
+                count: 0,
+                data: []
             });
         }
 
-        // 1. Extraer filtros estructurados usando el servicio de IA (Gemini 2.5 Flash)
-        const filters = await aiService.extractFiltersFromPrompt(prompt);
+        // 2. Pass prompt and lightweight inventory to the AI for semantic reasoning
+        const matchedIds = await aiService.semanticSearch(prompt, inventoryLight);
 
-        // 2. Construcción dinámica de la query de MongoDB
-        // Iniciamos un objeto vacío y solo agregamos condiciones si la IA las detectó
-        const mongoQuery = {};
-
-        // Lógica de filtrado por rango de precio
-        if (filters.minPrice !== null || filters.maxPrice !== null) {
-            mongoQuery.price = {};
-            if (filters.minPrice !== null) mongoQuery.price.$gte = filters.minPrice;
-            if (filters.maxPrice !== null) mongoQuery.price.$lte = filters.maxPrice;
+        // 3. If the AI found no matches, return early
+        if (!matchedIds || matchedIds.length === 0) {
+            return res.status(200).json({
+                success: true,
+                count: 0,
+                data: []
+            });
         }
 
-        // Lógica de filtrado geográfico (normalizado a minúsculas)
-        // Antes decía .toLowerCase(), asegúrate de que no tenga lógica que fuerce español
-        if (filters.region) {
-            mongoQuery.region = filters.region.toLowerCase();
-        }
+        // 4. Rehydrate the matched properties with their full data
+        const fullProperties = await Property.find({
+            _id: { $in: matchedIds }
+        }).lean();
 
-        // 3. Ejecución de la consulta en la base de datos
-        // Usamos .lean() para mejorar el rendimiento al obtener objetos JS planos
-        const properties = await Property.find(mongoQuery).lean().sort({ price: 1 });
-
-        // 4. Respuesta estructurada al cliente
+        // 5. Structured response to the client
         return res.status(200).json({
             success: true,
-            message: filters.intent || 'Búsqueda procesada con éxito',
-            count: properties.length,
-            filters, // Enviamos los filtros para que el Frontend pueda mostrarlos (ej: chips)
-            data: properties // Aquí viajan las Art Cards que se renderizarán
+            count: fullProperties.length,
+            data: fullProperties
         });
 
     } catch (error) {
-        console.error('❌ Error en processAgentQuery:', error.message);
-
-        return res.status(500).json({
-            success: false,
-            error: 'Error interno al procesar la solicitud del agente.',
-            details: error.message
-        });
+        next(error); // Passes the error to our robust errorHandler middleware
     }
 };
